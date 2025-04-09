@@ -32,13 +32,17 @@ boomImage.src = "boom-svgrepo-com.svg";
 async function loadFlightData() {
   try {
     const response = await fetch("flightData.json");
-    flightData = await response.json();
-    calculateTrajectory();
+    flightData = await response.json(); // Завантажуємо дані з JSON
+    console.log(flightData); // Виводимо дані в консоль
+    calculateTrajectory(); // Обчислюємо траєкторію
     droneImage.onload = () => {
+      // Коли зображення дрону завантажено
       if (mapImage.complete && boomImage.complete) {
+        // Якщо всі зображення готові
         drawFrame(0); // Малюємо, коли всі зображення готові
       } else {
-        mapImage.onload = boomImage.onload = () => drawFrame(0);
+        // Якщо зображення ще не готові
+        mapImage.onload = boomImage.onload = () => drawFrame(0); // Малюємо, коли зображення готові
       }
     };
   } catch (error) {
@@ -48,30 +52,33 @@ async function loadFlightData() {
 
 // Обчислення траєкторії
 function calculateTrajectory() {
-  let currentX = startX;
-  let currentY = startY;
-  positions = [{ x: currentX, y: currentY }];
+  // Обчислюємо траєкторію дрону
+  let currentX = startX; // Початкова позиція по осі X
+  let currentY = startY; // Початкова позиція по осі Y
+  positions = [{ x: currentX, y: currentY }]; // Додаємо початкову позицію
 
   for (let i = 1; i < flightData.length; i++) {
-    const prev = flightData[i - 1];
-    const curr = flightData[i];
-    const timeDiff = (curr.timestamp - prev.timestamp) / 3600;
-    const speed = parseFloat(prev.speed);
-    const direction = (parseFloat(prev.direction) * Math.PI) / 180;
+    // Проходимо по всіх даних
+    const prev = flightData[i - 1]; // Попереднє значення даних польоту
+    const curr = flightData[i]; // Поточне значення даних польоту
+    const timeDiff = (curr.timestamp - prev.timestamp) / 3600; // Різниця часу в годинах
+    const speed = parseFloat(prev.speed); // Швидкість дрону
+    const direction = (parseFloat(prev.direction) * Math.PI) / 180; // Напрямок дрону в радіанах
 
-    const distance = speed * timeDiff * scale;
-    const dx = distance * Math.cos(direction);
-    const dy = distance * Math.sin(direction);
+    const distance = speed * timeDiff * scale; // Відстань, яку пройшов дрон
+    const dx = distance * Math.cos(direction); // Зміщення по осі X
+    const dy = distance * Math.sin(direction); // Зміщення по осі Y
 
-    currentX += dx;
-    currentY -= dy;
-    positions.push({ x: currentX, y: currentY });
+    currentX += dx; // Оновлюємо позицію по осі X
+    currentY -= dy; // Оновлюємо позицію по осі Y (інвертуємо Y, оскільки canvas має іншу систему координат)
+    positions.push({ x: currentX, y: currentY }); // Додаємо нову позицію
   }
 }
 
 // Малювання
 function drawFrame(index) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Малюємо кадр
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаємо canvas
 
   // Малюємо карту як фон
   if (mapImage.complete) {
@@ -79,53 +86,58 @@ function drawFrame(index) {
   }
 
   // Малюємо траєкторію
-  ctx.beginPath();
-  ctx.moveTo(positions[0].x, positions[0].y);
+  ctx.beginPath(); // Починаємо новий шлях
+  ctx.moveTo(positions[0].x, positions[0].y); // Переміщаємося до початкової позиції
   for (let i = 1; i <= index; i++) {
-    ctx.lineTo(positions[i].x, positions[i].y);
+    // Проходимо по всіх позиціях до поточного індексу
+    ctx.lineTo(positions[i].x, positions[i].y); // Малюємо лінію до поточної позиції
   }
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  ctx.strokeStyle = "#000"; // Колір лінії
+  ctx.lineWidth = 3; // Товщина лінії
+  ctx.stroke(); // Малюємо лінію
 
   // Малюємо дрон
-  const x = positions[index].x - droneImage.width / 2;
-  const y = positions[index].y - droneImage.height / 2;
-  ctx.drawImage(droneImage, x, y);
+  const x = positions[index].x - droneImage.width / 2; // Центруємо дрон по осі X
+  const y = positions[index].y - droneImage.height / 2; // Центруємо дрон по осі Y
+  ctx.drawImage(droneImage, x, y); // Малюємо дрон
 
   // Малюємо BOOM!, якщо активний прапорець
   if (showBoom && boomImage.complete && boomPosition) {
-    const boomX = boomPosition.x - boomImage.width / 2;
-    const boomY = boomPosition.y - boomImage.height / 2;
-    ctx.drawImage(boomImage, boomX, boomY);
+    // Якщо прапорець активний і зображення BOOM! завантажено
+    const boomX = boomPosition.x - boomImage.width / 2; // Центруємо BOOM! по осі X
+    const boomY = boomPosition.y - boomImage.height / 2; // Центруємо BOOM! по осі Y
+    ctx.drawImage(boomImage, boomX, boomY); // Малюємо BOOM!
   }
 }
 
 // Анімація
 function startAnimation() {
+  // Запускаємо анімацію
   if (
     intervalId ||
     flightData.length === 0 ||
     !droneImage.complete ||
     !mapImage.complete ||
-    !boomImage.complete
+    !boomImage.complete // Перевіряємо, чи всі зображення завантажені
   )
     return;
 
-  console.log(positions.length / 2); // Виводимо позиції
-  let currentIndex = 0;
-  const stepTime = totalTime / flightData.length; // ~206 мс
+  let currentIndex = 0; // Поточний індекс для анімації
+  const stepTime = totalTime / flightData.length; // ~206 мс для кожного кроку
   const halfwayIndex = Math.floor(positions.length / 2); // Індекс середини траєкторії
 
   // Анімація польоту дрону
   intervalId = setInterval(() => {
+    // Запускаємо інтервал
     if (currentIndex < positions.length) {
-      drawFrame(currentIndex);
-      currentIndex++;
+      // Якщо індекс менший за кількість позицій
+      drawFrame(currentIndex); // Малюємо кадр
+      currentIndex++; // Збільшуємо індекс
     } else {
-      stopAnimation();
+      // Якщо індекс більший або дорівнює кількості позицій
+      stopAnimation(); // Зупиняємо анімацію
     }
-  }, stepTime);
+  }, stepTime); // Кожні ~206 мс
 
   // Показ BOOM! через 10 секунд у позиції середини траєкторії
   boomTimeoutId = setTimeout(() => {
@@ -141,13 +153,16 @@ function startAnimation() {
 
 // Зупинка
 function stopAnimation() {
+  // Зупиняємо анімацію
   if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
+    // Якщо інтервал активний
+    clearInterval(intervalId); // Очищаємо інтервал
+    intervalId = null; // Очищаємо інтервал
   }
   if (boomTimeoutId) {
+    // Якщо таймер BOOM! активний
     clearTimeout(boomTimeoutId); // Очищаємо таймер показу BOOM!
-    boomTimeoutId = null;
+    boomTimeoutId = null; // Очищаємо таймер
   }
   if (boomHideTimeoutId) {
     clearTimeout(boomHideTimeoutId); // Очищаємо таймер приховування BOOM!
