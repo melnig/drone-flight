@@ -3,13 +3,15 @@ const ctx = canvas.getContext("2d");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 
-let flightData = [];
-let intervalId = null;
+let flightData = []; // Дані польоту
+let intervalId = null; // Ідентифікатор інтервалу
+let boomTimeoutId = null; // Ідентифікатор таймера для BOOM!
+let boomHideTimeoutId = null; // Ідентифікатор таймера для приховування BOOM!
 const totalTime = 20000; // 20 секунд
 const scale = 0.5; // Масштаб для canvas 400x400
-const startX = canvas.width / 2;
-const startY = canvas.height / 2;
-let positions = [];
+const startX = canvas.width / 2; // Центр canvas по осі X
+const startY = canvas.height / 2; // Центр canvas по осі Y
+let positions = []; // Позиції дрону
 let showBoom = false; // Прапорець для відображення BOOM!
 let boomPosition = null; // Позиція для BOOM!
 
@@ -24,7 +26,7 @@ mapImage.src = "map.png";
 // Завантаження зображення BOOM!
 const boomImage = new Image();
 boomImage.src = "boom-svgrepo-com.svg";
-boomImage.style.zIndex = 3; // Встановлюємо z-index для BOOM!
+// boomImage.style.zIndex = 3; // Ця строка не потрібна для canvas, прибираємо
 
 // Завантаження JSON
 async function loadFlightData() {
@@ -93,7 +95,7 @@ function drawFrame(index) {
 
   // Малюємо BOOM!, якщо активний прапорець
   if (showBoom && boomImage.complete && boomPosition) {
-    const boomX = boomPosition.x - boomImage.width / 2; // Центруємо BOOM!
+    const boomX = boomPosition.x - boomImage.width / 2;
     const boomY = boomPosition.y - boomImage.height / 2;
     ctx.drawImage(boomImage, boomX, boomY);
   }
@@ -110,6 +112,7 @@ function startAnimation() {
   )
     return;
 
+  console.log(positions.length / 2); // Виводимо позиції
   let currentIndex = 0;
   const stepTime = totalTime / flightData.length; // ~206 мс
   const halfwayIndex = Math.floor(positions.length / 2); // Індекс середини траєкторії
@@ -125,11 +128,11 @@ function startAnimation() {
   }, stepTime);
 
   // Показ BOOM! через 10 секунд у позиції середини траєкторії
-  setTimeout(() => {
+  boomTimeoutId = setTimeout(() => {
     boomPosition = positions[halfwayIndex]; // Зберігаємо позицію середини
     showBoom = true; // Вмикаємо прапорець
     drawFrame(currentIndex); // Оновлюємо кадр із BOOM!
-    setTimeout(() => {
+    boomHideTimeoutId = setTimeout(() => {
       showBoom = false; // Вимикаємо через 2 секунди
       drawFrame(currentIndex); // Оновлюємо кадр без BOOM!
     }, 2000); // 2 секунди
@@ -142,10 +145,18 @@ function stopAnimation() {
     clearInterval(intervalId);
     intervalId = null;
   }
+  if (boomTimeoutId) {
+    clearTimeout(boomTimeoutId); // Очищаємо таймер показу BOOM!
+    boomTimeoutId = null;
+  }
+  if (boomHideTimeoutId) {
+    clearTimeout(boomHideTimeoutId); // Очищаємо таймер приховування BOOM!
+    boomHideTimeoutId = null;
+  }
   showBoom = false; // Прибираємо BOOM! при зупинці
   boomPosition = null; // Очищаємо позицію
   if (positions.length > 0) {
-    drawFrame(0);
+    drawFrame(0); // Малюємо початковий кадр
   }
 }
 
