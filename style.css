@@ -1,0 +1,39 @@
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  background: #f0f0f0;
+}
+canvas {
+  border: 1px solid #000;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+button {
+  margin: 10px;
+  padding: 5px 15px;
+  align-items: center;
+}
+
+#startBtn {
+  display: flex;
+  align-items: center;
+}
+
+.btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px;
+}
+
+canvas {
+  background-image: url(map.png);
+}
+
+.skull-img {
+  width: 30px;
+  margin-left: 8px;
+}
